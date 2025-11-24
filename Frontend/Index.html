@@ -1,1 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>ArticleSpa — Futuristic 1920s Newspaper SPA</title>
+  <meta name="description" content="ArticleSpa — ADHD-friendly, high-density futuristic-1920s newspaper style SPA with instant micro-articles, gamification, and offline reading." />
+  <meta name="keywords" content="ADHD, micro-hacks, newspaper, futuristic, 1920s, focus, gamification, articles" />
+  <meta name="author" content="ArticleSpa Hybrid Team" />
+  <!-- === Embedded Styles: Futuristic 1920s / NYTimes-like Print Feel === -->
+  <style>
+    /* Root palette & typographic hints */
+    :root{
+      --paper:#fbf9f4;
+      --ink:#0b0b0b;
+      --shadow:rgba(0,0,0,0.12);
+      --accent-green:#00c07a;   /* future money green */
+      --accent-gold:#c9a03a;
+      --accent-cyan:#00e0ff;
+      --muted:#666;
+      --max-width:1100px;
+      --col-gap:24px;
+    }
 
+    /* Basic reset & body */
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: "Merriweather", "Georgia", "Times New Roman", serif;
+      background:var(--paper);
+      color:var(--ink);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      line-height:1.55;
+      -webkit-text-size-adjust:100%;
+    }
+
+    /* Container */
+    .wrap{max-width:var(--max-width);margin:0 auto;padding:0 16px;}
+
+    /* Header — like a masthead */
+    header.masthead{
+      background:linear-gradient(90deg,var(--accent-gold),var(--accent-cyan));
+      color:var(--ink);
+      padding:20px 0;
+      text-align:center;
+      letter-spacing:1px;
+      font-family:"Playfair Display","Georgia","Times New Roman",serif;
+      font-size:28px;
+      font-weight:700;
+    }
+    .subtag{font-size:12px;color:rgba(0,0,0,0.65);margin-top:6px}
+
+    /* Sticky reader strip + search */
+    .reader-strip{
+      position:sticky; top:0; z-index:40;
+      background:rgba(255,255,255,0.98);
+      border-bottom:1px solid rgba(0,0,0,0.06);
+      backdrop-filter: blur(6px);
+    }
+    .strip-inner{display:flex;align-items:center;gap:12px;justify-content:space-between;padding:8px 16px;max-width:var(--max-width);margin:0 auto;}
+    .strip-left{display:flex;align-items:center;gap:12px}
+    .logo-small{font-weight:900; font-family:"Playfair Display","Georgia"; font-size:18px}
+    .search-input{border:1px solid #ddd;padding:6px 10px;border-radius:6px;font-size:14px;width:200px}
+    .reader-actions{display:flex;gap:8px;align-items:center}
+
+    /* Top nav (for desktop) */
+    nav.topnav{display:flex;justify-content:center;gap:10px;padding:10px 0;background:transparent}
+    nav.topnav a{font-weight:700;color:var(--ink);padding:6px 10px;border-radius:4px;text-decoration:none}
+    nav.topnav a:hover{background:rgba(0,0,0,0.04)}
+
+    /* Page grid — newspaper columns feel */
+    .page{display:grid;grid-template-columns:1fr 320px;gap:var(--col-gap);align-items:start;padding:18px 0;}
+    @media(max-width:1000px){.page{grid-template-columns:1fr;}}
+    /* Left column content */
+    main.article-column{padding-right:8px}
+
+    /* Section heading (Art Deco / 1920s) */
+    .section-head{
+      font-family:"Playfair Display","Georgia",serif;
+      font-size:22px;
+      letter-spacing:0.6px;
+      font-weight:700;
+      margin:10px 0 18px;
+      border-bottom:2px solid var(--ink);
+      padding-bottom:8px;
+    }
+
+    /* Cards styled like printed article blocks */
+    .grid{display:flex;flex-wrap:wrap;gap:18px}
+    .block{
+      background:var(--paper);
+      width:calc(50% - 9px);
+      padding:18px;
+      border-left:6px solid var(--accent-gold);
+      border-radius:4px;
+      box-shadow:0 6px 18px var(--shadow);
+      transition:transform .25s ease, box-shadow .25s ease;
+      position:relative;
+      overflow:hidden;
+    }
+    .block:hover{transform:translateY(-6px) rotate(-0.25deg); box-shadow:0 12px 30px rgba(0,0,0,0.18)}
+    .block .kicker{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:1px}
+    .block .title{font-family:"Playfair Display","Georgia";font-size:18px;font-weight:700;margin-bottom:8px}
+    .block .excerpt{font-size:14px;color:var(--ink);margin-bottom:12px}
+    .meta-row{display:flex;gap:10px;align-items:center;font-size:12px;color:var(--muted)}
+
+    /* Price badge & lock */
+    .price-badge{position:absolute;top:14px;right:14px;background:#000;color:#fff;padding:6px 8px;border-radius:4px;font-weight:700;font-size:13px}
+    .locked-overlay{
+      position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,0) 0%,rgba(255,255,255,0.8) 60%);display:flex;align-items:flex-end;justify-content:center;padding:14px;pointer-events:none;
+    }
+
+    /* Unlock CTA */
+    .cta{display:inline-block;background:var(--accent-green);color:#032; padding:8px 12px;border-radius:6px;font-weight:700;border:none;cursor:pointer}
+    .cta:hover{background:var(--accent-gold)}
+    .cta-small{padding:6px 8px;font-size:13px}
+
+    /* Right column: sidebar (social proof, bundles, search results) */
+    aside.sidebar{padding-left:8px}
+    .widget{background:#fff;padding:12px;border-radius:6px;border-left:4px solid var(--accent-green);box-shadow:0 6px 18px var(--shadow);margin-bottom:16px}
+    .widget h4{margin:0 0 8px;font-size:14px;font-weight:700}
+    .best-sellers li{list-style:none;padding:8px 0;border-bottom:1px solid #eee;font-size:14px}
+    .bundle{display:flex;flex-direction:column;gap:8px}
+
+    /* Reading mode toggle */
+    .reader-mode-toggle{display:inline-flex;align-items:center;gap:8px;padding:6px;border-radius:6px;background:rgba(0,0,0,0.04)}
+
+    /* Bottom nav for thumb (mobile) */
+    .bottom-nav{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;background:#fff;padding:6px 12px;border-radius:30px;box-shadow:0 8px 24px rgba(0,0,0,0.12);display:flex;gap:12px;z-index:50}
+    .bottom-nav button{background:transparent;border:none;font-weight:700;padding:6px 8px;border-radius:6px}
+
+    /* Article preview blur for paywall (accessible) */
+    .preview-blur{position:relative}
+    .preview-blur .locked{filter:blur(0);transition:filter .25s} /* default */
+    .pay-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+    .paymodal{pointer-events:auto;background:linear-gradient(180deg,rgba(255,255,255,0.98),#fff);padding:12px;border-radius:8px;border:1px solid #eee;box-shadow:0 8px 26px rgba(0,0,0,0.15);}
+
+    /* Tiny microcopy for buy options */
+    .price-row{display:flex;gap:8px;align-items:center}
+    .price-chip{background:#000;color:#fff;padding:6px 8px;border-radius:6px;font-weight:800;font-size:13px}
+
+    /* Small print for footer */
+    footer.site-foot{padding:18px;text-align:center;color:var(--muted);font-size:13px;margin-top:22px}
+
+    /* Responsive adjustments */
+    @media(max-width:900px){
+      .block{width:calc(50% - 9px)}
+      .strip-inner{padding-left:10px;padding-right:10px}
+    }
+    @media(max-width:680px){
+      .block{width:100%}
+      .page{grid-template-columns:1fr}
+      .bottom-nav{left:50%;width:calc(100% - 48px)}
+    }
+
+    /* subtle print texture */
+    @media (min-width:1000px){
+      body:before{content:"";position:fixed;inset:0;pointer-events:none;background-image:linear-gradient(rgba(0,0,0,0.01) 1px, transparent 1px);background-size:100% 60px;opacity:0.02}
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Masthead -->
+  <header class="masthead">
+    ArticleSpa — Futuristic 1920s Newspaper
+    <div class="subtag">High-density micro-articles for novel minds — gamified, shareable, and offline-ready</div>
+  </header>
+
+  <!-- Sticky reader strip -->
+  <div class="reader-strip">
+    <div class="strip-inner wrap">
+      <div class="strip-left">
+        <div class="logo-small">ArticleSpa</div>
+        <div style="font-size:13px;color:var(--muted)">Your daily spark</div>
+      </div>
+
+      <div style="display:flex;gap:10px;align-items:center">
+        <input id="search" class="search-input" placeholder="Search micro-hacks, prompts, topics..." aria-label="Search articles" />
+        <div class="reader-actions">
+          <div class="reader-mode-toggle" title="Toggle reading mode">
+            <label style="font-size:13px">Reader</label>
+            <input id="toggleReader" type="checkbox" style="transform:scale(1.1)" aria-label="Toggle reading mode" />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- top nav -->
+  <nav class="topnav wrap" aria-label="Main navigation">
+    <a href="#articles">Front Page</a>
+    <a href="#instant-article">60-Second</a>
+    <a href="#prompts">Prompt Vault</a>
+    <a href="#donation">Support</a>
+  </nav>
+
+  <!-- main page grid -->
+  <div class="wrap page" role="main">
+    <!-- left: articles -->
+    <main class="article-column">
+
+      <!-- FRONT FEATURE: hero -->
+      <section id="hero" aria-labelledby="hero-head">
+        <div class="section-head" id="hero-head">Front Page — Today’s Sparks</div>
+        <div class="grid" id="frontGrid">
+          <!-- Primary feature block (big) -->
+          <article class="block" data-id="feature-1" aria-labelledby="t1">
+            <div class="kicker">Featured</div>
+            <div id="t1" class="title">Micro-Hacks for Mega Focus</div>
+            <div class="excerpt">A 3-step ritual that compresses procrastination down to a productive pop. Preview below — unlock the full ritual for guided timers and templates.</div>
+
+            <div class="meta-row" style="margin-top:12px">
+              <div class="price-badge">Free Preview</div>
+              <div style="flex:1"></div>
+              <button class="cta cta-small" onclick="openPreview('feature-1')">Read Preview</button>
+            </div>
+            <div class="locked-overlay" aria-hidden="true">
+              <!-- decorative overlay to hint paywall -->
+            </div>
+          </article>
+
+          <!-- Secondary blocks -->
+          <article class="block" data-id="a2" aria-labelledby="t2">
+            <div class="kicker">Life</div>
+            <div id="t2" class="title">Game Your Brain</div>
+            <div class="excerpt">Turn chores into dopamine micro-games with instant scoring and rewards. Preview available.</div>
+            <div class="meta-row" style="margin-top:12px">
+              <div class="price-chip">$1.99</div>
+              <div style="flex:1"></div>
+              <button class="cta cta-small" onclick="purchaseSingle('a2')">Unlock</button>
+            </div>
+          </article>
+
+          <article class="block" data-id="a3" aria-labelledby="t3">
+            <div class="kicker">Mind</div>
+            <div id="t3" class="title">Flow Spa</div>
+            <div class="excerpt">Ambient design, color cues and micro-sounds to anchor attention for sessions as short as 90 seconds.</div>
+            <div class="meta-row" style="margin-top:12px">
+              <div class="price-chip">$0.99</div>
+              <div style="flex:1"></div>
+              <button class="cta cta-small" onclick="purchaseSingle('a3')">Unlock</button>
+            </div>
+          </article>
+
+          <!-- more blocks (examples) -->
+          <article class="block" data-id="a4" aria-labelledby="t4">
+            <div class="kicker">Prompts</div>
+            <div id="t4" class="title">Executive Dragon Slayer</div>
+            <div class="excerpt">Step-by-step AI prompts to tame procrastination and decompose tasks into bite-sized wins.</div>
+            <div class="meta-row" style="margin-top:12px">
+              <div class="price-chip">Free</div>
+              <div style="flex:1"></div>
+              <button class="cta cta-small" onclick="openPrompt('Executive Dragon Slayer')">Open</button>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+      <!-- 60-second micro-article section -->
+      <section id="instant-article" aria-labelledby="quick-head" style="margin-top:28px">
+        <div class="section-head" id="quick-head">⚡ 60-Second Reads</div>
+        <div class="grid" id="quickGrid">
+          <article class="block" data-id="q1" aria-labelledby="q1t">
+            <div class="kicker">Quick</div>
+            <div id="q1t" class="title">Micro-Hacks Quick Read</div>
+            <div class="excerpt">Start a 60-sec routine now that primes focus energy. Unlock full pack for templates.</div>
+            <div class="meta-row" style="margin-top:12px">
+              <div class="price-chip">Free</div>
+              <div style="flex:1"></div>
+              <button class="cta cta-small" onclick="openPreview('q1')">Preview</button>
+            </div>
+          </article>
+
+          <article class="block" data-id="q2" aria-labelledby="q2t">
+            <div class="kicker">Quick</div>
+            <div id="q2t" class="title">Game Your Brain Quick Tips</div>
+            <div class="excerpt">Three micro-tricks to apply in the next five minutes.</div>
+            <div class="meta-row" style="margin-top:12px">
+              <div class="price-chip">$0.49</div>
+              <div style="flex:1"></div>
+              <button class="cta cta-small" onclick="purchaseSingle('q2')">Unlock</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- right: sidebar -->
+    <aside class="sidebar">
+      <div class="widget">
+        <h4>Bundle — Starter Pack</h4>
+        <div class="bundle">
+          <div style="font-weight:700">Unlock 5 micro-articles</div>
+          <div style="color:var(--muted)">One-time: Lifetime access</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+            <div class="price-chip">$3.49</div>
+            <button class="cta" onclick="purchaseBundle()">Unlock Bundle</button>
+          </div>
+          <small style="color:var(--muted)">Best value — includes templates & prompts</small>
+        </div>
+      </div>
+
+      <div class="widget">
+        <h4>Readers Are Loving</h4>
+        <ul class="best-sellers" style="margin:0;padding:0">
+          <li>Micro-Hacks for Mega Focus — 1.2k unlocks</li>
+          <li>Game Your Brain — 860 unlocks</li>
+          <li>Flow Spa — 670 unlocks</li>
+        </ul>
+      </div>
+
+      <div class="widget">
+        <h4>Subscribe</h4>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <input id="email" placeholder="Your email" style="padding:8px;border:1px solid #ddd;border-radius:6px;flex:1"/>
+          <button class="cta" onclick="subscribe()">Subscribe</button>
+        </div>
+        <small style="color:var(--muted)">Get weekly micro-article packs & a free sample.</small>
+      </div>
+
+      <div class="widget">
+        <h4>Quick Links</h4>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <a href="#prompts">Prompt Vault</a>
+          <a href="#donation">Support the Soup</a>
+          <a href="#instant-article">60-Second Reads</a>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <!-- footer -->
+  <footer class="site-foot">
+    © 2025 ArticleSpa — Futuristic 1920s Newspaper · Built AMO-first · Offline-ready
+  </footer>
+
+  <!-- bottom nav for mobile thumbs -->
+  <div class="bottom-nav" role="navigation" aria-label="Bottom navigation">
+    <button onclick="scrollToTop()">Home</button>
+    <button onclick="openSaved()">Saved</button>
+    <button onclick="openBundles()">Bundles</button>
+    <button onclick="openSupport()">Support</button>
+  </div>
+
+  <!-- Modals & Paywall UI (hidden until needed) -->
+  <div id="modalHost" aria-hidden="true"></div>
+
+  <!-- Scripts -->
+  <script>
+    /**********************************************
+     * ArticleSpa — Single File JS
+     * Features:
+     * - Search (simple client-side)
+     * - Preview paywall overlay + unlock flow
+     * - Bundle purchase placeholder
+     * - Spark Points gamification
+     * - Reader mode toggle
+     * - Email subscribe (placeholder)
+     * - Inline service worker via Blob (offline)
+     **********************************************/
+
+    // --- Utility & State ---
+    const state = {
+      spark: Number(localStorage.getItem('as_spark')||0),
+      unlocked: JSON.parse(localStorage.getItem('as_unlocked')||'{}'),
+      userEmail: localStorage.getItem('as_email')||'',
+    };
+
+    function saveState(){ localStorage.setItem('as_spark', state.spark); localStorage.setItem('as_unlocked', JSON.stringify(state.unlocked)); }
+
+    // --- Search (simple) ---
+    document.getElementById('search').addEventListener('input', (e)=>{
+      const q = e.target.value.toLowerCase().trim();
+      document.querySelectorAll('.block').forEach(block=>{
+        const text = (block.innerText||'').toLowerCase();
+        block.style.display = q ? (text.includes(q) ? '' : 'none') : '';
+      });
+    });
+
+    // --- Reader Mode Toggle ---
+    document.getElementById('toggleReader').addEventListener('change', (e)=>{
+      if(e.target.checked){
+        document.body.style.fontSize = '18px';
+        document.body.style.background = '#fff';
+        document.querySelectorAll('.block').forEach(b=>b.style.boxShadow='none');
+      } else {
+        document.body.style.fontSize = '';
+        document.querySelectorAll('.block').forEach(b=>b.style.boxShadow='0 6px 18px var(--shadow)');
+      }
+    });
+
+    // --- Scrolling helpers ---
+    function scrollToTop(){ window.scrollTo({top:0,behavior:'smooth'}); }
+    function openSaved(){ alert('Saved articles — placeholder'); }
+    function openBundles(){ document.querySelector('.bundle .cta').click(); }
+    function openSupport(){ window.location.hash='#donation' }
+
+    // --- Preview / Paywall / Unlock logic ---
+    function openPreview(id){
+      // Find block
+      const block = document.querySelector(`[data-id="${id}"]`) || document.querySelector(`[data-id="${id}"]`);
+      showModal({
+        title: block ? block.querySelector('.title').innerText : 'Preview',
+        html: `
+          <p style="margin:0 0 8px">Free preview: first two paragraphs for ${block ? block.querySelector('.title').innerText : ''}</p>
+          <div style="max-height:220px;overflow:auto;border:1px solid #eee;padding:10px;background:#fff;margin-bottom:10px">
+            <p><em>1) Step one — set a 10 minute timer and clear the deck.</em></p>
+            <p><em>2) Step two — apply the 90-second focus ritual and mark a small win.</em></p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="cta" onclick="purchaseSingle('${id}')">Unlock Full — $1.99</button>
+            <button class="cta" style="background:#ddd;color:#000" onclick="closeModal()">Close</button>
+          </div>
+        `
+      });
+    }
+
+    function purchaseSingle(id){
+      // placeholder flow: open a native prompt to simulate payment
+      const name = (document.querySelector(`[data-id="${id}"] .title`)||{innerText:id}).innerText;
+      const ok = confirm(`Purchase "${name}" for $1.99? (Simulated)`);
+      if(ok){
+        state.unlocked[id] = true; saveState();
+        addSpark(25);
+        closeModal();
+        showToast('Unlocked — enjoy the full article!');
+      }
+    }
+
+    function purchaseBundle(){
+      const ok = confirm('Purchase Starter Bundle — unlock 5 articles for $3.49? (Simulated)');
+      if(ok){
+        // unlock everything for demo
+        document.querySelectorAll('.block').forEach(b=>state.unlocked[b.dataset.id]=true);
+        saveState();
+        addSpark(100);
+        showToast('Bundle unlocked — thank you for supporting ArticleSpa!');
+      }
+    }
+
+    // --- Prompt opener ---
+    function openPrompt(name){
+      showModal({title:name,html:`<p>AI prompt: "Help me break down ${name} into steps..."</p><div style="margin-top:8px"><button class="cta" onclick="copyPrompt()">Copy Prompt</button></div>`});
+    }
+    function copyPrompt(){ navigator.clipboard?.writeText('AI prompt template'); showToast('Prompt copied'); }
+
+    // --- Donate / Subscribe ---
+    function donate(type){
+      const ok = confirm(`Donate via ${type} — simulate?`);
+      if(ok){ addSpark(40); showToast('Thank you — your support fuels the soup!') }
+    }
+    document.querySelector('.bundle .cta')?.addEventListener('click', purchaseBundle);
+    function subscribe(){
+      const email = document.getElementById('email').value.trim();
+      if(!email || !email.includes('@')){ alert('Please enter a valid email'); return; }
+      state.userEmail = email; localStorage.setItem('as_email', email);
+      showToast('Subscribed — check your inbox for a free 3-article pack');
+      addSpark(10);
+    }
+
+    // --- Spark points & confetti ---
+    function addSpark(n){
+      state.spark += n; saveState();
+      // tiny UI bubble
+      showToast(`+${n} Spark Points ✨ (Total: ${state.spark})`);
+      spawnConfetti();
+    }
+
+    function spawnConfetti(){
+      for(let i=0;i<12;i++){
+        const d=document.createElement('div');
+        d.textContent = ['✨','•','•','✦'][Math.floor(Math.random()*4)];
+        d.style.position='fixed';
+        d.style.left=(10 + Math.random()*80)+'%';
+        d.style.top=(10 + Math.random()*60)+'%';
+        d.style.fontSize=(8+Math.random()*18)+'px';
+        d.style.opacity=1;
+        d.style.zIndex=9999;
+        document.body.appendChild(d);
+        d.animate([{transform:'translateY(0)',opacity:1},{transform:'translateY(120px)',opacity:0}],{duration:900+Math.random()*600,fill:'forwards',easing:'cubic-bezier(.2,.8,.2,1)'});
+        setTimeout(()=>d.remove(),1700);
+      }
+    }
+
+    // --- Modal & Toast helpers ---
+    function showModal({title='',html=''}){
+      const host = document.getElementById('modalHost');
+      host.innerHTML = `<div role="dialog" aria-modal="true" style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9998">
+        <div style="max-width:520px;padding:18px;border-radius:8px">${'<h3 style="margin:0 0 8px">'+title+'</h3>'}${html || ''}</div>
+      </div>`;
+      host.setAttribute('aria-hidden','false');
+    }
+    function closeModal(){ const host=document.getElementById('modalHost'); host.innerHTML=''; host.setAttribute('aria-hidden','true'); }
+    function showToast(msg){
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style.position='fixed';
+      t.style.left='50%';
+      t.style.transform='translateX(-50%)';
+      t.style.bottom='84px';
+      t.style.background='rgba(0,0,0,0.9)';
+      t.style.color='#fff';
+      t.style.padding='10px 16px';
+      t.style.borderRadius='18px';
+      t.style.zIndex=9999;
+      document.body.appendChild(t);
+      setTimeout(()=>t.style.opacity='0',2200);
+      setTimeout(()=>t.remove(),3000);
+    }
+
+    // --- Paywall display logic (visual) ---
+    function renderPaywallVisuals(){
+      document.querySelectorAll('.block').forEach(block=>{
+        const id = block.dataset.id;
+        if(state.unlocked[id]){
+          block.querySelector('.price-badge')?.remove?.();
+          // show full content - in demo we just style
+          block.style.opacity=1;
+        } else {
+          // add subtle lock if priced
+          if(!block.querySelector('.price-badge') && block.querySelector('.price-chip')){
+            const badge = document.createElement('div');
+            badge.className='price-badge';
+            badge.innerText = block.querySelector('.price-chip') ? block.querySelector('.price-chip').innerText : 'Preview';
+            block.appendChild(badge);
+          }
+        }
+      });
+    }
+    renderPaywallVisuals();
+
+    // --- Save state on page hide ---
+    window.addEventListener('pagehide', saveState);
+
+    // --- Inline Service Worker registration via Blob for single-file offline ---
+    if('serviceWorker' in navigator){
+      const sw = `
+        const CACHE = 'articlespa-v1';
+        const ASSETS = ['/', location.pathname];
+        self.addEventListener('install', e => {
+          e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+          self.skipWaiting();
+        });
+        self.addEventListener('activate', e => {
+          e.waitUntil(clients.claim());
+        });
+        self.addEventListener('fetch', e => {
+          e.respondWith(caches.match(e.request).then(r => r || fetch(e.request).then(res=>{caches.open(CACHE).then(c=>c.put(e.request, res.clone())); return res;})).catch(()=>caches.match('/')));
+        });
+      `;
+      const blob = new Blob([sw],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(blob)).then(r=>console.log('SW registered')).catch(()=>console.warn('SW failed'));
+    }
+
+    // --- Basic analytics hooks (placeholders) ---
+    function track(event, payload){ console.log('TRACK',event,payload); /* replace with GA/Fathom call */ }
+
+    // small UX niceties
+    document.querySelectorAll('.cta').forEach(btn=>btn.onclick=e=>{ track('cta_click',{text:btn.innerText}); });
+
+    // init - show saved spark
+    if(state.spark>0) showToast(`Welcome back — ${state.spark} Spark Points`);
+  </script>
+</body>
+</html>
